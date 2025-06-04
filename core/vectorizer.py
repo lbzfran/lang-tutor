@@ -4,12 +4,21 @@ Focuses on breaking down text into chunks.
 """
 from typing import List, Dict
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
+# from langchain_community.vectorstores import FAISS
 import faiss
 import numpy as np
 import json
 import os
+import hashlib
+import tarfile
 from sentence_transformers import SentenceTransformer
+
+
+def load_data_json(path: str) -> Dict[str, any]:
+    with open(path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    return data
 
 
 def split_text_into_chunks(data: Dict[str, any]) -> List[str]:
@@ -43,21 +52,30 @@ def store_vectors(embeddings: List[List[float]], chunked_text: List[str], storag
         for chunk in chunked_text:
             f.write(f"{chunk}\n")
 
-def load_cartridge(path: str) -> Dict[str, any]:
-    with open(path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
+    cartridge_compile(storage_path, storage_path + '.cart')
 
-    return data
+def _compute_directory_hash(path):
+    sha1_hash = hashlib.sha1()
 
-if __name__ == "__main__":
-    path = os.path.join(os.getcwd(), "cartridges", "kr_en",
-                        "korean_travel_basics.json")
+    for root, _, files in os.walk(path):
+        for fname in sorted(files):
+            fpath = os.path.join(root, fname)
 
-    data = load_cartridge(path)
+            with open(fpath, 'rb') as f:
+                while chunk := f.read(8192):
+                    sha1_hash.update(chunk)
 
-    text_chunks = split_text_into_chunks(data)
+    return sha1_hash.hexdigest()
 
-    embeddings = generate_embeddings(text_chunks)
+def cartridge_compile(src, dst):
+    dir_hash = _compute_directory_hash(src)
 
-    store_vectors(embeddings, text_chunks, os.path.join(
-        os.getcwd(), "vectors", "kr_en"))
+    hash_file_path = f'{os.path.basename(src)}_hash.txt'
+    with open(hash_file_path, 'w') as f:
+        f.write(f"SHA-1:{dir_hash}\n")
+
+    with tarfile.open(dst, 'w:gz') as tar:
+        tar.add(src, arcname=os.path.basename(src))
+        tar.add(hash_file_path, arcname=hash_file_path)
+
+    os.remove(hash_file_path)
