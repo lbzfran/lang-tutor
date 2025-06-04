@@ -26,13 +26,14 @@ def cartridge_load(src, dst):
         tar.extractall(path=dst)
 
     print(src, dst)
-    cmp_file = f"{os.path.basename(src).split('.')[0]}_hash.txt"
+    dir_name = f"{os.path.basename(src).split('.')[0]}"
+    cmp_file = f"{dir_name}_hash.txt"
 
     with open(os.path.join(dst, cmp_file)) as f:
         stored_hash = f.read().split(":")[1].strip()
 
-    recomputed_hash = _compute_directory_hash(dst)
+    recomputed_hash = _compute_directory_hash(os.path.join(dst, dir_name))
 
     if stored_hash != recomputed_hash:
-        print("Integrity check failed! Directory has changed:\n{}\n{}",
-              stored_hash, recomputed_hash)
+        print("Integrity check failed! Directory has changed:\n{}\n{}".format(
+              stored_hash, recomputed_hash))
