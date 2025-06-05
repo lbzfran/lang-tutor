@@ -2,26 +2,13 @@
 """
 Simple cartridge loader.
 """
-import hashlib
 import tarfile
 import os
+import core.util as util
+import faiss
 
 
-def _compute_directory_hash(path):
-    sha1_hash = hashlib.sha1()
-
-    for root, _, files in os.walk(path):
-        for fname in sorted(files):
-            fpath = os.path.join(root, fname)
-
-            with open(fpath, 'rb') as f:
-                while chunk := f.read(8192):
-                    sha1_hash.update(chunk)
-
-    return sha1_hash.hexdigest()
-
-
-def cartridge_load(src, dst):
+def cartridge_load(src, dst) -> str:
     with tarfile.open(src, 'r:gz') as tar:
         tar.extractall(path=dst)
 
@@ -32,8 +19,29 @@ def cartridge_load(src, dst):
     with open(os.path.join(dst, cmp_file)) as f:
         stored_hash = f.read().split(":")[1].strip()
 
-    recomputed_hash = _compute_directory_hash(os.path.join(dst, dir_name))
+    recomputed_hash = util.compute_directory_hash(os.path.join(dst, dir_name))
 
     if stored_hash != recomputed_hash:
         print("Integrity check failed! Directory has changed:\n{}\n{}".format(
               stored_hash, recomputed_hash))
+
+    return dir_name
+
+
+def load_faiss_index(index_path):
+    index = faiss.read_index(index_path)
+    return index
+
+
+def load_document_chunks(chunks_path):
+    with open(chunks_path, "r", encoding="utf-8") as file:
+        chunks = file.readlines()
+    return [chunk.strip() for chunk in chunks]
+
+
+def retrieve_relevant_documents(query_vector, faiss_index, k=5):
+
+    assert query_vector.shape[1] == faiss_index.d, f"FAISS index dim mismatch: {faiss_index.d} over {query_vector.shape[1]}"
+
+    distances, indices = faiss_index.search(query_vector, k)
+    return indices[0]

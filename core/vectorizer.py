@@ -9,9 +9,8 @@ import faiss
 import numpy as np
 import json
 import os
-import hashlib
 import tarfile
-from sentence_transformers import SentenceTransformer
+import core.util as util
 
 
 def load_data_json(path: str) -> Dict[str, any]:
@@ -33,12 +32,6 @@ def split_text_into_chunks(data: Dict[str, any]) -> List[str]:
     return chunked_text
 
 
-def generate_embeddings(text_chunks: List[str]) -> List[List[float]]:
-    model = SentenceTransformer("all-MiniLM-L6-v2")
-
-    embeddings = model.encode(text_chunks)
-    return embeddings
-
 
 def store_vectors(embeddings: List[List[float]], chunked_text: List[str], storage_path: str) -> None:
     embeddings_np = np.array(embeddings).astype("float32")
@@ -54,21 +47,9 @@ def store_vectors(embeddings: List[List[float]], chunked_text: List[str], storag
 
     cartridge_compile(storage_path, storage_path + '.cart')
 
-def _compute_directory_hash(path):
-    sha1_hash = hashlib.sha1()
-
-    for root, _, files in os.walk(path):
-        for fname in sorted(files):
-            fpath = os.path.join(root, fname)
-
-            with open(fpath, 'rb') as f:
-                while chunk := f.read(8192):
-                    sha1_hash.update(chunk)
-
-    return sha1_hash.hexdigest()
 
 def cartridge_compile(src, dst):
-    dir_hash = _compute_directory_hash(src)
+    dir_hash = util.compute_directory_hash(src)
 
     hash_file_path = f'{os.path.basename(src)}_hash.txt'
     with open(hash_file_path, 'w') as f:
