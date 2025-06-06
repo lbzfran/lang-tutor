@@ -14,7 +14,7 @@ data_dir_path = os.path.join(os.getcwd(), "data")
 
 
 def compile_command(cartridge_id: str = None, file_name: str = None):
-    if cartridge_id is None:
+    if cartridge_id is None or file_name is None:
         print("'compile' expects id and file name. i.e., 'compile <cartridge_id> <file_name>'.")
         return
 
@@ -49,8 +49,34 @@ def load_command(cartridge_id: str = None, cartridge_path: str = None, output_di
     print("Loaded cartridge! Data dumped in '{}'.".format(data_dir_path))
 
 
-def context_command(query: str = "", cartridge_id: str = current_cartridge_id):
+def set_command(cartridge_id: str = None):
+    possible_ids = []
+    if cartridge_id is None:
+        for _, dirs, _ in os.walk(cache_dir_path):
+            for d in dirs:
+                possible_ids.append(d)
+
+
+        print("Possible Ids in cache:", possible_ids)
+        while True:
+            print("Enter an id:")
+            user_input = input(">> ")
+
+            if user_input in possible_ids:
+                cartridge_id = user_input
+                break
+
+            print("Input is not valid! Try again.")
+
+    print("Cartridge set to '{}'.".format(cartridge_id))
+    current_cartridge_id = cartridge_id
+
+def context_command(query: str = "", cartridge_id: str = None):
     global current_cartridge_id
+
+    cartridge_id = cartridge_id or current_cartridge_id
+    if cartridge_id is None:
+        print("cartridge not specified.")
 
     cartridge_dir_path = os.path.join(cache_dir_path, cartridge_id)
 
@@ -74,6 +100,7 @@ available_commands = {
     "help": help_command,
     "list": help_command,
     "load": load_command,
+    "set": set_command,
     "context": context_command
 }
 

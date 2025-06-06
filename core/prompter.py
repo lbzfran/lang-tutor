@@ -20,6 +20,8 @@ def generate_response(query, context):
 
 
 def perform_rag(query, faiss_index_path, chunks_path):
+    print("faiss: {}\nchunks: {}".format(faiss_index_path, chunks_path))
+
     faiss_index = loader.load_faiss_index(faiss_index_path)
     document_chunks = loader.load_document_chunks(chunks_path)
 
