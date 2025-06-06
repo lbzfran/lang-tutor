@@ -1,72 +1,81 @@
 import os
 from typing import List
+import core.util as util
 import core.vectorizer as vectorizer
-import core.cartridge_loader as loader
+import core.loader as loader
 import core.prompter as prompter
 
-current_cartridge_id = None
-cache_path = os.path.join(os.getcwd(), "cache")
-cartridge_path = os.path.join(os.getcwd(), "cartridges")
+current_cartridge_id = ""
+cache_dir_path = os.path.join(os.getcwd(), "cache")
+cartridge_dir_path = os.path.join(os.getcwd(), "cartridges")
+data_dir_path = os.path.join(os.getcwd(), "data")
 
 # NOTE(liam): path is expected
-def vectorize_command(data_file_path: str, cartridge_id: str = None):
-    cartridge_id = cartridge_id or "default"
-    output_dir = os.path.join(cartridge_path, cartridge_id)
+
+
+def compile_command(cartridge_id: str = None, file_name: str = None):
+    if cartridge_id is None:
+        print("'compile' expects id and file name. i.e., 'compile <cartridge_id> <file_name>'.")
+        return
+
+    data_file_path = os.path.join(data_dir_path, cartridge_id, file_name)
+    output_dir = os.path.join(cartridge_dir_path, cartridge_id)
 
     os.makedirs(output_dir, exist_ok=True)
 
-    print("using path: {}".format(data_file_path))
+    print("using path: '{}'.".format(data_file_path))
 
     data = vectorizer.load_data_json(data_file_path)
     text_chunks = vectorizer.split_text_into_chunks(data)
-    embeddings = vectorizer.generate_embeddings(text_chunks)
+    embeddings = util.generate_embeddings(text_chunks)
 
     vectorizer.store_vectors(embeddings, text_chunks, output_dir)
 
-    print("Vectorized file!")
+    print("compiled vector file at '{}'.".format(
+        os.path.join(cartridge_dir_path, cartridge_id + '.cart')))
 
 
-def load_command(path: str = None, output_dir: str = None):
+def load_command(cartridge_id: str = None, cartridge_path: str = None, output_dir: str = cache_dir_path):
     global current_cartridge_id
 
-    path = path or os.path.join(
-        os.getcwd(), "cartridges", "kr_en.cart")
-    output_dir = output_dir or cache_path
+    cartridge_path = cartridge_path or os.path.join(
+        cartridge_dir_path, cartridge_id + '.cart')
     os.makedirs(output_dir, exist_ok=True)
 
-    print("using path: {}".format(path))
+    print("using path: '{}'.".format(cartridge_path))
 
-    current_cartridge_id = loader.cartridge_load(path, output_dir)
+    current_cartridge_id = loader.cartridge_load(cartridge_path, output_dir)
 
-    print("Loaded cartridge!")
+    print("Loaded cartridge! Data dumped in '{}'.".format(data_dir_path))
 
 
-def context_command(query: str = "", cartridge_id: str = ""):
+def context_command(query: str = "", cartridge_id: str = current_cartridge_id):
     global current_cartridge_id
 
-    cartridge_id = cartridge_id or current_cartridge_id
-    cartridge_path = os.path.join(cache_path, cartridge_id)
+    cartridge_dir_path = os.path.join(cache_dir_path, cartridge_id)
 
-    result = prompter.perform_rag(query, os.path.join(cartridge_path, "faiss.index"),
-                                  os.path.join(cartridge_path, "chunks.txt"))
+    result = prompter.perform_rag(query, os.path.join(cartridge_dir_path, "faiss.index"),
+                                  os.path.join(cartridge_dir_path, "chunks.txt"))
 
     print("Context generated:\n" + result)
 
 
 def help_command():
-    print("placeholder text.")
-    pass
+    global available_commands
+
+    for c in available_commands.keys():
+        print(f"\t- {c}")
+
+    print("\t- exit")
 
 
-def get_commands() -> List[str]:
-    result = {
-        "vectorize": vectorize_command,
-        "help": help_command,
-        "load": load_command,
-        "context": context_command
-    }
-
-    return result
+available_commands = {
+    "compile": compile_command,
+    "help": help_command,
+    "list": help_command,
+    "load": load_command,
+    "context": context_command
+}
 
 
 def main():
@@ -75,7 +84,6 @@ def main():
     Type 'help' to list available commands.
     """)
 
-    commands = get_commands()
     while True:
         cmd_inputs = input("> ").strip()
         parts = cmd_inputs.split()
@@ -85,16 +93,8 @@ def main():
 
         if command == "exit":
             break
-        elif command == "list":
-            i = 0
-            for c in commands.keys():
-                print(f"\t{i + 1}. {c}")
-                i += 1
-
-            print(f"\t{i + 1}. list\n\t{i + 2}. exit")
-
-        elif command in commands.keys():
-            commands[command](*arguments)
+        elif command in available_commands.keys():
+            available_commands[command](*arguments)
         else:
             print("Command '{}' not found.".format(command))
 

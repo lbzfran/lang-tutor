@@ -4,7 +4,7 @@ Makes the prompting.
 """
 
 # import ollama
-import core.cartridge_loader as loader
+import core.loader as loader
 import os
 import numpy as np
 import core.util as util
