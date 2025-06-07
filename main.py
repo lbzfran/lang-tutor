@@ -28,7 +28,7 @@ def add_command(cartridge_id: str = None, *file_names: List[str]):
     os.makedirs(output_dir, exist_ok=True)
 
     for file_name in file_names:
-        data_file_path = os.path.join(data_dir_path, cartridge_id, file_name)
+        data_file_path = os.path.join(data_dir_path, file_name)
         if not os.path.exists(data_file_path):
             print("'{}' not found in '{}'.".format(file_name, cartridge_id))
             continue
@@ -125,6 +125,28 @@ def unload_command(cartridge_id: str = None):
     print("Unloaded '{}' from cache!".format(cartridge_id))
 
 
+def generate_command(*query):
+    global last_cartridge_id
+
+    cartridge_id = last_cartridge_id
+    if cartridge_id is None:
+        print("ERROR: cartridge id was not previously set via 'load'.")
+        return
+
+    cartridge_dir_path = os.path.join(cache_dir_path, cartridge_id)
+
+    query = " ".join(query)
+
+    context_lang = "Language: {}\n".format(cartridge_id)
+    context_info = prompter.perform_rag(query, os.path.join(cartridge_dir_path, "faiss.index"),
+                                        os.path.join(cartridge_dir_path, "chunks.txt"))
+
+    context = context_lang + context_info
+    result = prompter.generate_response(context)
+
+    print("Generated:\n" + result)
+
+
 def context_command(*query):
     global last_cartridge_id
 
@@ -137,14 +159,13 @@ def context_command(*query):
 
     query = " ".join(query)
 
-    result = prompter.perform_rag(query, os.path.join(cartridge_dir_path, "faiss.index"),
-                                  os.path.join(cartridge_dir_path, "chunks.txt"))
+    context_lang = "Language: {}\n".format(cartridge_id)
+    context_info = prompter.perform_rag(query, os.path.join(cartridge_dir_path, "faiss.index"),
+                                        os.path.join(cartridge_dir_path, "chunks.txt"))
 
-    print("Context generated:\n" + result)
+    context = context_lang + context_info
 
-
-def generate_command():
-    pass
+    print("Context:\n" + context)
 
 
 def exit_command():
@@ -167,6 +188,7 @@ available_commands = {
     "set": set_command,
     "unload": unload_command,
     "context": context_command,
+    "generate": generate_command,
     "exit": exit_command
 }
 

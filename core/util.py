@@ -7,7 +7,7 @@ import os
 from typing import List
 from sentence_transformers import SentenceTransformer
 
-model_id = "all-MiniLM-L6-v2"
+model_id = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 
 def set_model(new_id):

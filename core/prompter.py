@@ -14,7 +14,7 @@ import core.util as util
 model_name = "smollm2:1.7b-instruct-q8_0"
 
 
-def generate_response(query, context):
+def generate_response(context):
     combined_input = f"""
         You are an AI language tutor. Use the context below to create a lesson for a beginner learner.
 
@@ -37,11 +37,10 @@ def generate_response(query, context):
             },
         ])
     return response['message']['content']
-    # return combined_input
 
 
 def perform_rag(query, faiss_index_path, chunks_path):
-    print("faiss: {}\nchunks: {}".format(faiss_index_path, chunks_path))
+    print("db: {}\nchunks: {}".format(faiss_index_path, chunks_path))
 
     faiss_index = loader.load_faiss_index(faiss_index_path)
     document_chunks = loader.load_document_chunks(chunks_path)
@@ -53,5 +52,5 @@ def perform_rag(query, faiss_index_path, chunks_path):
 
     context = " ".join([document_chunks[i] for i in relevant_indices])
 
-    answer = generate_response(query, context)
-    return answer
+    return context
+
