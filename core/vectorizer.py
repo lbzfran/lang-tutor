@@ -11,6 +11,7 @@ import json
 import os
 import tarfile
 import core.util as util
+import pymupdf
 
 
 def load_data_json(path: str) -> Dict[str, any]:
@@ -20,31 +21,58 @@ def load_data_json(path: str) -> Dict[str, any]:
     return data
 
 
-def split_text_into_chunks(data: Dict[str, any]) -> List[str]:
-    chunks = []
-    for entry in data["content"]:
-        text = entry.get("korean", "") + "\n" + entry.get("english", "")
-        chunks.append(text)
+def load_data_pdf(path: str) -> str:
+    doc = pymupdf.open(path)
+    text = ""
+    for pnum in range(doc.page_count):
+        page = doc.load_page(pnum)
+        text += page.get_text("text")
 
+    return text
+
+
+def split_text_into_chunks(data: Dict[str, any] | str, ext: str) -> List[str]:
+    text_to_split: str = ""
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    chunked_text = splitter.split_text("\n".join(chunks))
+
+    if ext == 'json':
+        chunks = []
+        for entry in data:
+            text = entry.get("korean", "") + "\n" + entry.get("english", "")
+            chunks.append(text)
+        text_to_split = "\n".join(chunks)
+    elif ext == 'pdf':
+        text_to_split = data
+    else:
+        print("extension not supported!")
+        return [""]
+
+    chunked_text = splitter.split_text(text_to_split)
 
     return chunked_text
 
 
-
-def store_vectors(embeddings: List[List[float]], chunked_text: List[str], storage_path: str) -> None:
+def index_append(f_index, embeddings: List[List[float]], chunked_text: List[str], storage_path: str):
     embeddings_np = np.array(embeddings).astype("float32")
 
-    index = faiss.IndexFlatL2(embeddings_np.shape[1])
-    index.add(embeddings_np)
+    chunked_text_path = os.path.join(storage_path, "chunks.txt")
 
-    faiss.write_index(index, os.path.join(storage_path, "faiss.index"))
+    if f_index is None:
+        f_index = faiss.IndexFlatL2(embeddings_np.shape[1])
+        with open(chunked_text_path, "w", encoding="utf-8") as f:
+            pass
 
-    with open(os.path.join(storage_path, "chunks.txt"), "w", encoding="utf-8") as f:
+    f_index.add(embeddings_np)
+
+    with open(chunked_text_path, "a", encoding="utf-8") as f:
         for chunk in chunked_text:
             f.write(f"{chunk}\n")
 
+    return f_index
+
+
+def store_vectors(f_index, storage_path: str) -> None:
+    faiss.write_index(f_index, os.path.join(storage_path, "faiss.index"))
     cartridge_compile(storage_path, storage_path + '.cart')
 
 

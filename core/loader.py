@@ -12,7 +12,7 @@ def cartridge_load(src, dst) -> str:
     with tarfile.open(src, 'r:gz') as tar:
         tar.extractall(path=dst)
 
-    print(src, dst)
+    # print(src, dst)
     dir_name = f"{os.path.basename(src).split('.')[0]}"
     cmp_file = f"{dir_name}_hash.txt"
 
