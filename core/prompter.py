@@ -3,20 +3,41 @@
 Makes the prompting.
 """
 
-# import ollama
+import ollama
 import core.loader as loader
 import os
 import numpy as np
 import core.util as util
 
 # ollama.init()
+# model_name = "huihui_ai/deepseek-r1-abliterated:1.5b-qwen-distill-q8_0"
+model_name = "smollm2:1.7b-instruct-q8_0"
 
 
 def generate_response(query, context):
-    combined_input = f"Context: {context}\n\nQuestion: {query}"
-    # response = ollama.chat(combined_input)
-    # return response['text']
-    return combined_input
+    combined_input = f"""
+        You are an AI language tutor. Use the context below to create a lesson for a beginner learner.
+
+        CONTEXT:
+        <<<< {context} >>>>
+
+        LESSON STRUCTURE:
+        1. Vocabulary List
+        2. Grammar Explanation
+        3. Practice Sentences
+        4. Translation Exercise
+        """
+    print("Context: '{}'".format(context))
+    response = ollama.chat(
+        model=model_name,
+        messages=[
+            {
+                'role': 'user',
+                'content': combined_input,
+            },
+        ])
+    return response['message']['content']
+    # return combined_input
 
 
 def perform_rag(query, faiss_index_path, chunks_path):
@@ -34,14 +55,3 @@ def perform_rag(query, faiss_index_path, chunks_path):
 
     answer = generate_response(query, context)
     return answer
-
-
-if __name__ == "__main__":
-    cartridge_path = os.path.join(os.getcwd(), "cache", "kr_en")
-    faiss_index_path = "faiss.index"
-    chunks_path = "chunks.txt"
-
-    result = perform_rag(input("> "), os.path.join(
-        cartridge_path, faiss_index_path), os.path.join(cartridge_path, chunks_path))
-
-    print(result)

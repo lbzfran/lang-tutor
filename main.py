@@ -22,12 +22,16 @@ def add_command(cartridge_id: str = None, *file_names: List[str]):
     if cartridge_id is None:
         print("'add' expects id i.e., 'compile <cartridge_id>'.")
         return
+    last_cartridge_id = cartridge_id
 
     output_dir = os.path.join(cartridge_dir_path, cartridge_id)
     os.makedirs(output_dir, exist_ok=True)
 
     for file_name in file_names:
         data_file_path = os.path.join(data_dir_path, cartridge_id, file_name)
+        if not os.path.exists(data_file_path):
+            print("'{}' not found in '{}'.".format(file_name, cartridge_id))
+            continue
 
         file_ext = file_name.split('.')[1]
         print("using path: '{}'.".format(data_file_path))
@@ -47,9 +51,7 @@ def add_command(cartridge_id: str = None, *file_names: List[str]):
         current_f_index = vectorizer.index_append(
             current_f_index, embeddings, text_chunks, output_dir)
 
-    last_cartridge_id = cartridge_id
-
-    print("file(s) added to '{}'.".format(cartridge_id))
+        print("'{}' added to '{}'.".format(file_name, cartridge_id))
 
 
 def compile_command(cartridge_id: str = None):

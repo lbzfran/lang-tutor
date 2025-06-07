@@ -9,6 +9,7 @@ import faiss
 import numpy as np
 import json
 import os
+import shutil
 import tarfile
 import core.util as util
 import pymupdf
@@ -88,3 +89,4 @@ def cartridge_compile(src, dst):
         tar.add(hash_file_path, arcname=hash_file_path)
 
     os.remove(hash_file_path)
+    shutil.rmtree(src)
