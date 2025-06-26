@@ -3,17 +3,18 @@
 Simple reused utility code.
 """
 import hashlib
+import requests
 import os
 from typing import List
 from sentence_transformers import SentenceTransformer
 
-model_id = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+vectorizer_model_id = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 
 def set_model(new_id):
-    global model_id
+    global vectorizer_model_id
 
-    model_id = new_id or model_id or "all-MiniLM-L6-v2"
+    vectorizer_model_id = new_id or vectorizer_model_id or "all-MiniLM-L6-v2"
 
 
 def compute_directory_hash(path):
@@ -31,9 +32,9 @@ def compute_directory_hash(path):
 
 
 def generate_embeddings(text_chunks: List[str]) -> List[List[float]]:
-    global model_id
+    global vectorizer_model_id
 
-    model = SentenceTransformer(model_id)
+    model = SentenceTransformer(vectorizer_model_id)
 
     embeddings = model.encode(text_chunks)
     return embeddings
