@@ -7,6 +7,7 @@ import core.loader as loader
 import core.prompter as prompter
 
 last_cartridge_id = ""
+<<<<<<< Updated upstream:backend/main.py
 current_f_index = None
 cache_dir_path = os.path.join(os.getcwd(), "cache")
 cartridge_dir_path = os.path.join(os.getcwd(), "cartridges")
@@ -28,6 +29,17 @@ def add_command(cartridge_id: str = None, *file_names: List[str]):
     The cartridge id must be specified, and will create a new
     directory in the cartridge directory if not found.
     """
+=======
+current_f_index: vectorizer.faiss.Index | None = None
+cache_dir_path: str = os.path.join(os.getcwd(), "cache")
+cartridge_dir_path: str = os.path.join(os.getcwd(), "cartridges")
+data_dir_path: str = os.path.join(os.getcwd(), "data")
+
+# NOTE(liam): path is expected
+
+
+def add_command(cartridge_id: str | None = None, *file_names: List[str]):
+>>>>>>> Stashed changes:main.py
     global last_cartridge_id, current_f_index
 
     cartridge_id = cartridge_id or last_cartridge_id
@@ -40,7 +52,8 @@ def add_command(cartridge_id: str = None, *file_names: List[str]):
     os.makedirs(output_dir, exist_ok=True)
 
     for file_name in file_names:
-        data_file_path = os.path.join(data_dir_path, file_name)
+        file_name = str(file_name)
+        data_file_path: str = os.path.join(data_dir_path, file_name)
         if not os.path.exists(data_file_path):
             print("'{}' not found in '{}'.".format(file_name, cartridge_id))
             continue
@@ -66,6 +79,7 @@ def add_command(cartridge_id: str = None, *file_names: List[str]):
         print("'{}' added to '{}'.".format(file_name, cartridge_id))
 
 
+<<<<<<< Updated upstream:backend/main.py
 def compile_command(cartridge_id: str = None):
     """
     Prepares a cartridge to be used by the program.
@@ -73,6 +87,9 @@ def compile_command(cartridge_id: str = None):
     within the cartridge directory.
     Outputs a 'cart' file.
     """
+=======
+def compile_command(cartridge_id: str | None = None):
+>>>>>>> Stashed changes:main.py
     global current_f_index
 
     cartridge_id = cartridge_id or last_cartridge_id
@@ -93,11 +110,15 @@ def compile_command(cartridge_id: str = None):
         os.path.join(cartridge_dir_path, cartridge_id + '.cart')))
 
 
+<<<<<<< Updated upstream:backend/main.py
 def load_command(cartridge_id: str = None, cartridge_path: str = None, output_dir: str = cache_dir_path):
     """
     Loads a valid cartridge file into the cache directory.
     Also automatically sets the cartridge id to be used.
     """
+=======
+def load_command(cartridge_id: str | None = None, cartridge_path: str | None = None, output_dir: str = cache_dir_path):
+>>>>>>> Stashed changes:main.py
     global last_cartridge_id
 
     cartridge_id = cartridge_id or last_cartridge_id
@@ -116,6 +137,7 @@ def load_command(cartridge_id: str = None, cartridge_path: str = None, output_di
     print("Loaded cartridge! Data dumped in '{}'.".format(data_dir_path))
 
 
+<<<<<<< Updated upstream:backend/main.py
 def set_command(cartridge_id: str = None):
     """
     Manually set the cartridge id to be used.
@@ -123,6 +145,9 @@ def set_command(cartridge_id: str = None):
     will guide user to choose from the available cartridges
     already loaded in the cache directory.
     """
+=======
+def set_command(cartridge_id: str | None = None):
+>>>>>>> Stashed changes:main.py
     global last_cartridge_id
 
     possible_ids = []
@@ -146,11 +171,22 @@ def set_command(cartridge_id: str = None):
     last_cartridge_id = cartridge_id
 
 
+<<<<<<< Updated upstream:backend/main.py
 def unload_command(cartridge_id: str = None):
     """
     Clears out the cache directory.
     """
     print("This will clear out all files within the cache. Continue?")
+=======
+def unload_command(cartridge_id: str | None = None):
+    global last_cartridge_id
+
+    if cartridge_id is None:
+        if last_cartridge_id is None:
+            print("ERROR: cartridge id was not previously set via 'load'.")
+            return
+        cartridge_id = last_cartridge_id
+>>>>>>> Stashed changes:main.py
 
     answer = input("(y/N): ")
     if answer.lower() == 'y':
